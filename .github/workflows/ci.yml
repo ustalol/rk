@@ -1,0 +1,77 @@
+name: CI/CD Pipeline — Build, Test & Package
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-package:
+    name: Build, Test & Package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Для создания релизов
+
+    steps:
+      - name: Checkout код
+        uses: actions/checkout@v3
+
+      - name: Установка зависимостей
+        run: |
+          sudo apt update
+          sudo apt install -y cmake g++ dpkg-dev ruby-dev
+          sudo gem install fpm
+
+      - name: Конфигурация CMake
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+
+      - name: Сборка проекта
+        run: |
+          cd build
+          make
+
+      - name: Запуск тестов
+        run: |
+          cd build
+          ./test_documents
+
+      - name: Создание .deb пакета
+        run: |
+          cd build
+          mkdir -p deb/usr/local/bin
+          cp rk deb/usr/local/bin/
+          cd deb
+          fpm -s dir -t deb -n rk-app -v 1.0 .
+          mv ../rk-app_1.0_amd64.deb .
+
+      - name: Загрузка артефакта
+        uses: actions/upload-artifact@v3
+        with:
+          name: rk-app-deb
+          path: build/rk-app_1.0_amd64.deb
+
+  release-deb:
+    name: Create GitHub Release
+    needs: build-test-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Скачивание .deb файла
+        uses: actions/download-artifact@v3
+        with:
+          name: rk-app-deb
+          path: dist
+
+      - name: Создание релиза и прикрепление .deb
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0
+          files: dist/rk-app_1.0_amd64.deb
+          body: |
+            Автоматически собранный .deb пакет с тестами и приложением.
+
