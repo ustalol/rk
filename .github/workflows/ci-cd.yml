@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -46,7 +46,7 @@ jobs:
           mv ../rk-app_1.0_amd64.deb .
 
       - name: Upload DEB artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rk-app-deb
           path: build/rk-app_1.0_amd64.deb
@@ -60,7 +60,7 @@ jobs:
 
     steps:
       - name: Download DEB artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rk-app-deb
           path: dist
