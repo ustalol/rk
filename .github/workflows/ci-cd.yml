@@ -1,44 +1,42 @@
 name: CI/CD Pipeline — Build, Test & Package
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build-test-package:
-    name: Build, Test & Package
+    name: Build Project and Run Tests
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout код
+      - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Установка зависимостей
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y cmake g++ dpkg-dev ruby-dev
           sudo gem install fpm
 
-      - name: Конфигурация CMake
+      - name: Configure CMake
         run: |
           mkdir build
           cd build
           cmake ..
 
-      - name: Сборка проекта
+      - name: Build project
         run: |
           cd build
           make
 
-      - name: Запуск тестов
+      - name: Run unit tests
         run: |
           cd build
           ./test_documents
 
-      - name: Создание .deb пакета
+      - name: Create DEB package
         run: |
           cd build
           mkdir -p deb/usr/local/bin
@@ -47,31 +45,30 @@ jobs:
           fpm -s dir -t deb -n rk-app -v 1.0 .
           mv ../rk-app_1.0_amd64.deb .
 
-      - name: Загрузка артефакта
+      - name: Upload DEB artifact
         uses: actions/upload-artifact@v3
         with:
           name: rk-app-deb
           path: build/rk-app_1.0_amd64.deb
 
   release-deb:
-    name: Create GitHub Release
+    name: Create GitHub Release with DEB
     needs: build-test-package
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Скачивание .deb файла
+      - name: Download DEB artifact
         uses: actions/download-artifact@v3
         with:
           name: rk-app-deb
           path: dist
 
-      - name: Создание релиза и прикрепление .deb
+      - name: Create GitHub Release and attach DEB
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v1.0
           files: dist/rk-app_1.0_amd64.deb
           body: |
-            Автоматически собранный .deb пакет с тестами и приложением.
-
+            Automatically built .deb package with application and tests.
