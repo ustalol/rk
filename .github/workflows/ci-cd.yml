@@ -10,7 +10,7 @@ jobs:
     name: Build, Test & Package
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Для создания релизов
+      contents: write
 
     steps:
       - name: Checkout код
